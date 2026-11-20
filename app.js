@@ -11,6 +11,7 @@
   };
 
   const API_TIMEOUT_MS = 15000;
+  const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzA_55E3GDlMoNwNX2NojUjrTz_GY1ykoQqMjPKnIYXNeffoMyHqt6usuV8XeOlf88f/exec';
 
   const THAI_MONTHS_FULL = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -233,12 +234,10 @@
 
   function loadLocalState() {
     const savedConfig = readStorageJson(STORAGE_KEYS.CONFIG, null);
-    if (savedConfig && typeof savedConfig === 'object') {
-      state.config = {
-        webAppUrl: String(savedConfig.webAppUrl || '').trim(),
-        pin: String(savedConfig.pin || '').trim(),
-      };
-    }
+    state.config = {
+      webAppUrl: String(savedConfig?.webAppUrl || DEFAULT_WEB_APP_URL).trim(),
+      pin: String(savedConfig?.pin || '').trim(),
+    };
 
     const savedTx = readStorageJson(STORAGE_KEYS.TRANSACTIONS, []);
     state.transactions = Array.isArray(savedTx) ? savedTx : [];
@@ -1109,7 +1108,7 @@
   }
 
   function openSettingsModal() {
-    els.cfgUrl.value = state.config.webAppUrl;
+    els.cfgUrl.value = state.config.webAppUrl || DEFAULT_WEB_APP_URL;
     els.cfgPin.value = state.config.pin;
     els.cfgPin.type = 'password';
     els.togglePinBtn.setAttribute('aria-pressed', 'false');
@@ -1122,6 +1121,9 @@
     hideSettingsFeedback();
 
     openDialog(els.settingsDialog);
+    if (els.cfgUrl.value && !els.cfgPin.value) {
+      requestAnimationFrame(() => els.cfgPin.focus());
+    }
   }
 
   async function handleTestConnection() {
