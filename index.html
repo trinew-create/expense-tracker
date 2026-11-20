@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="เว็บแอปรายรับ-รายจ่ายส่วนตัวภาษาไทย เชื่อมต่อ Google Sheets แบบ Mobile-First">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="รายรับรายจ่าย">
+
+  <title>จดรายรับ-รายจ่ายส่วนตัว</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="antialiased selection:bg-emerald-200 selection:text-slate-900">
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-20 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/70 px-4 py-3">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-emerald-400 font-bold text-base shadow-sm" aria-hidden="true">฿</span>
+            <h1 class="text-base font-bold tracking-tight text-slate-900 truncate">รายรับ-รายจ่าย</h1>
+          </div>
+          <!-- Sync Status Pill -->
+          <div id="syncStatus" role="status" aria-live="polite" class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span id="syncDot" class="h-2 w-2 rounded-full bg-slate-400 shrink-0" aria-hidden="true"></span>
+            <span id="syncText">กำลังโหลด...</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button
+            id="refreshBtn"
+            type="button"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs hover:bg-slate-100 active:scale-95 transition"
+            aria-label="ซิงก์ข้อมูลล่าสุดจาก Google Sheets"
+            title="ซิงก์ข้อมูลล่าสุด"
+          >
+            <svg id="refreshIcon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+              <polyline points="21 3 21 9 15 9"/>
+            </svg>
+          </button>
+
+          <button
+            id="settingsBtn"
+            type="button"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs hover:bg-slate-100 active:scale-95 transition"
+            aria-label="ตั้งค่าการเชื่อมต่อ Google Sheets และ PIN"
+            title="ตั้งค่าการเชื่อมต่อ"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 pt-3 space-y-4">
+      <!-- Unconfigured Notice Banner -->
+      <section id="setupBanner" hidden class="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-amber-950 shadow-xs">
+        <div class="flex items-start justify-between gap-3">
+          <div class="text-sm leading-relaxed">
+            <p class="font-semibold">ยังไม่ได้เชื่อมต่อ Google Sheets</p>
+            <p class="text-xs text-amber-800 mt-0.5">ตอนนี้บันทึกข้อมูลไว้ในเครื่องชั่วคราว กดตั้งค่าเพื่อใส่ Web App URL และ PIN</p>
+          </div>
+          <button
+            id="bannerSetupBtn"
+            type="button"
+            class="shrink-0 rounded-xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 active:scale-95 transition min-h-[40px]"
+          >
+            ตั้งค่าเลย
+          </button>
+        </div>
+      </section>
+
+      <!-- Month / Year Picker Bar -->
+      <section aria-label="เลือกเดือนและปี" class="flex items-center justify-between gap-2 rounded-2xl bg-white p-1.5 border border-slate-200/80 shadow-xs">
+        <button
+          id="prevMonthBtn"
+          type="button"
+          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95 transition"
+          aria-label="เดือนก่อนหน้า"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <div class="flex items-center justify-center gap-1.5 flex-1 min-w-0">
+          <label for="monthSelect" class="visually-hidden">เลือกเดือน</label>
+          <select
+            id="monthSelect"
+            class="appearance-none bg-transparent font-semibold text-slate-900 text-center rounded-lg px-2 py-1.5 hover:bg-slate-100 cursor-pointer min-h-[44px]"
+          ></select>
+
+          <label for="yearSelect" class="visually-hidden">เลือกปี</label>
+          <select
+            id="yearSelect"
+            class="appearance-none bg-transparent font-semibold text-slate-900 text-center rounded-lg px-2 py-1.5 hover:bg-slate-100 cursor-pointer min-h-[44px]"
+          ></select>
+
+          <button
+            id="todayMonthBtn"
+            type="button"
+            hidden
+            class="ml-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 active:scale-95 transition min-h-[36px]"
+          >
+            เดือนนี้
+          </button>
+        </div>
+
+        <button
+          id="nextMonthBtn"
+          type="button"
+          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95 transition"
+          aria-label="เดือนถัดไป"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Summary Card -->
+      <section aria-label="สรุปยอดประจำเดือน" class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-5 text-white shadow-lg">
+        <div class="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-emerald-500/15 blur-2xl" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute -bottom-14 -left-10 h-32 w-32 rounded-full bg-rose-500/10 blur-2xl" aria-hidden="true"></div>
+
+        <div class="relative">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-medium text-slate-300">ยอดคงเหลือสุทธิ</p>
+            <span id="summaryCount" class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-200 tabular-nums">0 รายการ</span>
+          </div>
+
+          <p id="netBalance" class="mt-1 text-3xl font-bold tracking-tight tabular-nums">฿0.00</p>
+
+          <!-- Income & Expense Breakdown -->
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-white/10 p-3 backdrop-blur-xs">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-emerald-300">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20" aria-hidden="true">↓</span>
+                <span>รายรับรวม</span>
+              </div>
+              <p id="totalIncome" class="mt-1 text-lg font-bold text-emerald-400 tabular-nums truncate">฿0.00</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/10 p-3 backdrop-blur-xs">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-rose-300">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20" aria-hidden="true">↑</span>
+                <span>รายจ่ายรวม</span>
+              </div>
+              <p id="totalExpense" class="mt-1 text-lg font-bold text-rose-400 tabular-nums truncate">฿0.00</p>
+            </div>
+          </div>
+
+          <!-- Expense Ratio Bar -->
+          <div id="ratioWrap" class="mt-3.5" hidden>
+            <div class="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+              <span>สัดส่วนรายจ่ายเทียบรายรับ</span>
+              <span id="ratioLabel" class="font-semibold tabular-nums">0%</span>
+            </div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+              <div id="ratioBar" class="h-full rounded-full bg-emerald-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filter Pills -->
+      <section aria-label="กรองประเภทรายการ" class="flex items-center justify-between gap-2">
+        <div class="inline-flex rounded-xl bg-slate-200/70 p-1 w-full" role="group" aria-label="ตัวกรองประเภท">
+          <button type="button" data-filter="all" class="filter-btn flex-1 rounded-lg py-2 text-xs font-semibold transition min-h-[40px] bg-white text-slate-900 shadow-xs" aria-pressed="true">ทั้งหมด</button>
+          <button type="button" data-filter="expense" class="filter-btn flex-1 rounded-lg py-2 text-xs font-semibold transition min-h-[40px] text-slate-600 hover:text-slate-900" aria-pressed="false">รายจ่าย</button>
+          <button type="button" data-filter="income" class="filter-btn flex-1 rounded-lg py-2 text-xs font-semibold transition min-h-[40px] text-slate-600 hover:text-slate-900" aria-pressed="false">รายรับ</button>
+        </div>
+      </section>
+
+      <!-- Transaction History Grouped by Date -->
+      <section aria-label="ประวัติรายการ">
+        <div id="txList" class="space-y-4"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" hidden class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-2xl" aria-hidden="true">📝</div>
+          <h2 class="mt-3 text-base font-semibold text-slate-800">ยังไม่มีรายการในเดือนนี้</h2>
+          <p class="mt-1 text-sm text-slate-500">แตะปุ่ม + ด้านล่างขวาเพื่อเริ่มจดรายรับหรือรายจ่ายได้เลย</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Status Notification -->
+  <div class="toast-container">
+    <div id="toast" role="status" aria-live="polite" hidden class="toast-pill rounded-2xl bg-slate-900/95 px-4 py-2.5 text-sm font-medium text-white shadow-lg backdrop-blur-sm"></div>
+  </div>
+
+  <!-- Floating Action Button (+) -->
+  <div class="fab-layer">
+    <div class="fab-inner">
+      <button
+        id="fabAddBtn"
+        type="button"
+        class="fab-btn inline-flex items-center justify-center bg-slate-900 text-white hover:bg-slate-800"
+        aria-label="เพิ่มรายการรายรับหรือรายจ่ายใหม่"
+        title="จดรายการใหม่"
+      >
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       Bottom Sheet Dialog: Add / Edit Transaction
+       ========================================================= -->
+  <dialog id="txDialog" class="bottom-sheet" closedby="any" aria-labelledby="txDialogTitle">
+    <div class="sheet-body px-5 pt-3">
+      <!-- Handle Bar -->
+      <div class="mx-auto mb-3 h-1.5 w-11 rounded-full bg-slate-200" aria-hidden="true"></div>
+
+      <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <h2 id="txDialogTitle" class="text-lg font-bold text-slate-900">จดรายการใหม่</h2>
+        <button
+          id="closeTxDialogBtn"
+          type="button"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+          aria-label="ปิดหน้าต่าง"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form id="txForm" novalidate aria-labelledby="txDialogTitle" class="mt-4 space-y-4">
+        <input type="hidden" id="txId" name="id" value="">
+
+        <!-- Type Switch (Expense / Income) -->
+        <fieldset class="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1.5">
+          <legend class="visually-hidden">ประเภทรายการ</legend>
+
+          <div>
+            <input type="radio" id="typeExpense" name="type" value="expense" class="visually-hidden radio-card-input type-radio-expense" checked>
+            <label for="typeExpense" class="radio-card-label flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-sm font-semibold text-slate-600 transition">
+              <span aria-hidden="true">↑</span>
+              <span>รายจ่าย</span>
+            </label>
+          </div>
+
+          <div>
+            <input type="radio" id="typeIncome" name="type" value="income" class="visually-hidden radio-card-input type-radio-income">
+            <label for="typeIncome" class="radio-card-label flex min-h-[48px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-sm font-semibold text-slate-600 transition">
+              <span aria-hidden="true">↓</span>
+              <span>รายรับ</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Amount Input -->
+        <div>
+          <label for="txAmount" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            จำนวนเงิน (บาท) <span class="text-rose-600" aria-hidden="true">*</span>
+          </label>
+          <div class="relative flex items-center">
+            <span class="pointer-events-none absolute left-4 text-2xl font-bold text-slate-400" aria-hidden="true">฿</span>
+            <input
+              id="txAmount"
+              name="amount"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="next"
+              required
+              placeholder="0.00"
+              aria-describedby="txAmountError"
+              class="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-11 pr-4 py-3 text-2xl font-bold text-slate-900 tabular-nums placeholder:text-slate-300 focus:border-slate-900 focus:bg-white transition"
+            >
+          </div>
+          <p id="txAmountError" class="mt-1 text-xs font-medium text-rose-600" role="alert" hidden></p>
+        </div>
+
+        <!-- Category Icon Grid -->
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 mb-2">
+            หมวดหมู่ <span class="text-rose-600" aria-hidden="true">*</span>
+          </legend>
+          <div id="categoryGrid" class="grid grid-cols-4 gap-2"></div>
+          <p id="txCategoryError" class="mt-1 text-xs font-medium text-rose-600" role="alert" hidden></p>
+        </fieldset>
+
+        <!-- Date & Note -->
+        <div class="grid grid-cols-1 gap-3.5">
+          <div>
+            <label for="txDate" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              วันที่ <span class="text-rose-600" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="txDate"
+              name="date"
+              type="date"
+              required
+              aria-describedby="txDateError"
+              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 focus:border-slate-900 transition"
+            >
+            <p id="txDateError" class="mt-1 text-xs font-medium text-rose-600" role="alert" hidden></p>
+          </div>
+
+          <div>
+            <label for="txNote" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              หมายเหตุ <span class="text-xs font-normal text-slate-400">(ไม่บังคับ)</span>
+            </label>
+            <input
+              id="txNote"
+              name="note"
+              type="text"
+              maxlength="120"
+              enterkeyhint="done"
+              placeholder="เช่น กาแฟเย็น, ค่ารถไฟฟ้า, เงินเดือน..."
+              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition"
+            >
+          </div>
+        </div>
+
+        <!-- Submit & Delete Buttons -->
+        <div class="pt-2 flex flex-col gap-2.5">
+          <button
+            id="txSubmitBtn"
+            type="submit"
+            class="w-full min-h-[52px] rounded-2xl bg-slate-900 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-60"
+          >
+            บันทึกรายการ
+          </button>
+
+          <button
+            id="txDeleteBtn"
+            type="button"
+            hidden
+            class="w-full min-h-[48px] rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 active:scale-[0.99] transition"
+          >
+            ลบรายการนี้
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- =========================================================
+       Center Modal Dialog: Settings (Web App URL & PIN)
+       ========================================================= -->
+  <dialog id="settingsDialog" class="center-modal" closedby="any" aria-labelledby="settingsDialogTitle">
+    <div class="p-5">
+      <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <div>
+          <h2 id="settingsDialogTitle" class="text-lg font-bold text-slate-900">ตั้งค่าการเชื่อมต่อ</h2>
+          <p class="text-xs text-slate-500 mt-0.5">เชื่อมต่อ Google Sheets ผ่าน Apps Script</p>
+        </div>
+        <button
+          id="closeSettingsBtn"
+          type="button"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+          aria-label="ปิดหน้าต่างตั้งค่า"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form id="settingsForm" novalidate aria-labelledby="settingsDialogTitle" class="mt-4 space-y-4">
+        <div>
+          <label for="cfgUrl" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Apps Script Web App URL <span class="text-rose-600" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="cfgUrl"
+            name="webAppUrl"
+            type="url"
+            required
+            autocomplete="url"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            enterkeyhint="next"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            aria-describedby="cfgUrlHelp cfgUrlError"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition"
+          >
+          <p id="cfgUrlHelp" class="mt-1 text-xs text-slate-500">URL ที่ได้จากการกด Deploy &gt; Web app (ลงท้ายด้วย /exec)</p>
+          <p id="cfgUrlError" class="mt-1 text-xs font-medium text-rose-600" role="alert" hidden></p>
+        </div>
+
+        <div>
+          <label for="cfgPin" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            รหัส PIN / Secret Token <span class="text-rose-600" aria-hidden="true">*</span>
+          </label>
+          <div class="relative flex items-center">
+            <input
+              id="cfgPin"
+              name="pin"
+              type="password"
+              required
+              autocomplete="current-password"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              enterkeyhint="done"
+              placeholder="กรอกรหัส PIN ที่ตั้งไว้ใน Code.gs"
+              aria-describedby="cfgPinError"
+              class="w-full rounded-xl border border-slate-300 bg-white pl-3.5 pr-12 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition"
+            >
+            <button
+              id="togglePinBtn"
+              type="button"
+              aria-pressed="false"
+              aria-label="แสดงรหัส PIN"
+              class="absolute right-1.5 inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+            >
+              <svg id="eyeShowIcon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="eyeHideIcon" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <p id="cfgPinError" class="mt-1 text-xs font-medium text-rose-600" role="alert" hidden></p>
+        </div>
+
+        <!-- Inline test/save feedback -->
+        <div id="settingsFeedback" role="status" aria-live="polite" hidden class="rounded-xl px-3.5 py-2.5 text-xs font-medium"></div>
+
+        <div class="pt-1 space-y-2">
+          <button
+            id="saveSettingsBtn"
+            type="submit"
+            class="w-full min-h-[48px] rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-60"
+          >
+            บันทึกและซิงก์ข้อมูล
+          </button>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              id="testConnectionBtn"
+              type="button"
+              class="min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-60"
+            >
+              ทดสอบการเชื่อมต่อ
+            </button>
+
+            <button
+              id="clearCacheBtn"
+              type="button"
+              class="min-h-[44px] rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+            >
+              ล้างแคชในเครื่อง
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- =========================================================
+       Center Modal Dialog: Confirm Delete
+       ========================================================= -->
+  <dialog id="confirmDialog" class="center-modal" closedby="any" aria-labelledby="confirmDialogTitle">
+    <div class="p-5">
+      <div class="flex items-start gap-3">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600" aria-hidden="true">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/>
+            <path d="M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h2 id="confirmDialogTitle" class="text-base font-bold text-slate-900">ยืนยันการลบรายการ?</h2>
+          <p id="confirmSummary" class="mt-1 text-sm text-slate-600 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-2.5">
+        <button
+          id="confirmCancelBtn"
+          type="button"
+          class="min-h-[48px] rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+        >
+          ยกเลิก
+        </button>
+        <button
+          id="confirmDeleteBtn"
+          type="button"
+          class="min-h-[48px] rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 active:scale-[0.99] transition"
+        >
+          ลบรายการ
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

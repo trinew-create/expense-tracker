@@ -1,0 +1,322 @@
+:root {
+  --font-sans: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --focus-ring: #2563eb;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Mobile-First Shell (max 480px on desktop) */
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  margin-inline: auto;
+  background-color: #f8fafc;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(6.5rem + var(--safe-bottom));
+  position: relative;
+}
+
+@media (min-width: 520px) {
+  .app-shell {
+    box-shadow: 0 20px 50px -12px rgb(15 23 42 / 0.16);
+    border-inline: 1px solid rgb(203 213 225 / 0.7);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visually hidden (accessible to screen readers & keyboard) */
+.visually-hidden {
+  position: absolute;
+  clip-path: inset(50%);
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+}
+
+/* Focus indicators */
+:is(button, a, input, select, textarea):focus-visible,
+.radio-card-input:focus-visible + .radio-card-label {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Form controls: prevent iOS zoom & enforce >= 48px touch targets */
+input:not([type='radio']):not([type='checkbox']),
+select,
+textarea {
+  font: inherit;
+  font-size: max(1rem, 1em);
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+@media (pointer: coarse) {
+  input:not([type='radio']):not([type='checkbox']),
+  select,
+  textarea {
+    min-height: 52px;
+  }
+}
+
+/* Non-intrusive post-interaction invalid state */
+input:user-invalid,
+select:user-invalid {
+  border-color: #e11d48;
+  background-color: #fff1f2;
+}
+
+/* Floating Action Button anchored inside the 480px shell */
+.fab-layer {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(1.25rem + var(--safe-bottom));
+  pointer-events: none;
+  z-index: 30;
+}
+
+.fab-inner {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fab-btn {
+  pointer-events: auto;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 12px 24px -6px rgb(15 23 42 / 0.35), 0 4px 8px -2px rgb(15 23 42 / 0.2);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.fab-btn:active {
+  transform: scale(0.94);
+}
+
+/* =========================================================
+   Native <dialog> Modals & Bottom Sheet (Top-Layer Animated)
+   ========================================================= */
+
+dialog:modal {
+  /* Prevent scroll chaining to background page */
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  /* Make ::backdrop a non-scrollable scroll container to trap scroll */
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgb(15 23 42 / 0);
+  backdrop-filter: blur(0px);
+  transition-property: background-color, backdrop-filter, display, overlay;
+  transition-duration: 0.26s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+/* Base (closed / exit) state for Bottom Sheet */
+dialog.bottom-sheet {
+  margin: auto auto 0 auto;
+  padding: 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  border: 0;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 -16px 40px -10px rgb(15 23 42 / 0.22);
+  opacity: 0;
+  overflow-y: auto;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.28s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.bottom-sheet {
+    transform: translateY(100%);
+  }
+}
+
+/* Base (closed / exit) state for Center Modal */
+dialog.center-modal {
+  margin: auto;
+  padding: 0;
+  width: calc(100% - 2rem);
+  max-width: 420px;
+  max-height: 90dvh;
+  border: 0;
+  border-radius: 1.25rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.28);
+  opacity: 0;
+  overflow-y: auto;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.22s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.center-modal {
+    transform: scale(0.94) translateY(8px);
+  }
+}
+
+/* Open state with @starting-style and [data-closing] fallback support */
+:is(dialog.bottom-sheet[open]):where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateY(0);
+
+    @starting-style {
+      transform: translateY(100%);
+    }
+  }
+
+  &::backdrop {
+    background-color: rgb(15 23 42 / 0.52);
+    backdrop-filter: blur(2px);
+
+    @starting-style {
+      background-color: rgb(15 23 42 / 0);
+      backdrop-filter: blur(0px);
+    }
+  }
+}
+
+:is(dialog.center-modal[open]):where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: scale(1) translateY(0);
+
+    @starting-style {
+      transform: scale(0.94) translateY(8px);
+    }
+  }
+
+  &::backdrop {
+    background-color: rgb(15 23 42 / 0.52);
+    backdrop-filter: blur(2px);
+
+    @starting-style {
+      background-color: rgb(15 23 42 / 0);
+      backdrop-filter: blur(0px);
+    }
+  }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  dialog.bottom-sheet,
+  dialog.center-modal,
+  dialog::backdrop {
+    transition-duration: 0.1s;
+  }
+}
+
+/* Safe area padding inside bottom sheet */
+.sheet-body {
+  padding-bottom: calc(1.25rem + var(--safe-bottom));
+}
+
+/* Segmented Type Radio Buttons */
+.type-radio-expense:checked + label {
+  background-color: #e11d48;
+  color: #ffffff;
+  box-shadow: 0 4px 12px -2px rgb(225 29 72 / 0.35);
+}
+
+.type-radio-income:checked + label {
+  background-color: #059669;
+  color: #ffffff;
+  box-shadow: 0 4px 12px -2px rgb(5 150 105 / 0.35);
+}
+
+/* Category Icon Cards */
+.cat-radio:checked + .cat-card {
+  border-color: #0f172a;
+  background-color: #f1f5f9;
+  box-shadow: 0 0 0 1px #0f172a;
+}
+
+.cat-radio[data-type='expense']:checked + .cat-card {
+  border-color: #e11d48;
+  background-color: #fff1f2;
+  box-shadow: 0 0 0 1px #e11d48;
+}
+
+.cat-radio[data-type='income']:checked + .cat-card {
+  border-color: #059669;
+  background-color: #ecfdf5;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+/* Sync icon spin animation */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.is-spinning {
+  animation: spin-slow 0.85s linear infinite;
+}
+
+/* Toast notification */
+.toast-container {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(5.75rem + var(--safe-bottom));
+  z-index: 40;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  padding-inline: 1rem;
+}
+
+.toast-pill {
+  max-width: 440px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-pill[hidden] {
+  display: none;
+}
